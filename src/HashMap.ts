@@ -131,6 +131,14 @@ export class HashMap<K,V> implements IMap<K,V> {
     }
 
     /**
+     * Remove the current value for the key you give if the key is present.
+     * Return the map without the given key and the value removed as a pair
+     */
+    pop(k: K & WithEquality): [Option<V>, HashMap<K,V>] {
+        return [this.get(k), this.remove(k)]
+    }
+
+    /**
      * Implementation of the Iterator interface.
      */
     [Symbol.iterator](): Iterator<[K,V]> {
@@ -166,6 +174,16 @@ export class HashMap<K,V> implements IMap<K,V> {
      */
     remove(k: K&WithEquality): HashMap<K,V> {
         return new HashMap<K,V>(this.hamt.remove(k));
+    }
+
+    /**
+     * Return a new map with value for the key you give set to
+     * the result of adjustValue when given the old value for the key you gave.
+     * If the key was not present the original map will be returned
+     */
+    adjust(k: K&WithEquality, adjustValue: (v: V) => V): HashMap<K, V> {
+      let curV = this.get(k);
+      return curV.map(v => this.put(k, adjustValue(v))).getOrElse(this)
     }
 
     /**
@@ -653,6 +671,10 @@ class EmptyHashMap<K,V> extends HashMap<K,V> {
         return <None<V>>none;
     }
 
+    pop(k: K & WithEquality): [Option<V>, HashMap<K,V>] {
+        return [Option.none(), this]
+    }
+
     [Symbol.iterator](): Iterator<[K,V]> {
         return { next: () => ({ done: true, value: <any>undefined }) };
     }
@@ -669,6 +691,10 @@ class EmptyHashMap<K,V> extends HashMap<K,V> {
     }
 
     remove(k: K&WithEquality): HashMap<K,V> {
+        return this;
+    }
+
+    adjust(k: K&WithEquality, adjustValue: (v: V) => V): HashMap<K, V> {
         return this;
     }
 
